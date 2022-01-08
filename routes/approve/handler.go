@@ -78,7 +78,7 @@ func (c *Controller) ApproveAction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseActionID := map[string]string{"approve_key": approveObj.ApproveKey}
+	responseActionID := map[string]string{"approve_key": approveObj.ApproveKey, "amount_approved": approveObj.Amount, "currency": approveObj.Currency}
 	c.Logger.Debug(request.GetRequestID(r), "M:%v ts %+v", methodName, time.Since(start))
 	response.SuccessResponseHelper(w, responseActionID, http.StatusOK)
 }
