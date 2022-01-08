@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/jinzhu/gorm"
-	"github.com/syedomair/ex-pay-gateway/approve_micro/routes/approve"
-	"github.com/syedomair/ex-pay-gateway/lib/container"
-	log "github.com/syedomair/ex-pay-gateway/lib/tools/logger"
+	"github.com/syedomair/ex-paygate-approve/routes/approve"
+	"github.com/syedomair/ex-paygate-lib/lib/container"
+	log "github.com/syedomair/ex-paygate-lib/lib/tools/logger"
 
 	//"github.com/syedomair/ex-pay-gateway/lib/tools/request"
 	//"github.com/syedomair/ex-pay-gateway/lib/tools/response"
@@ -55,11 +55,13 @@ type Routes []Route
 func routerSetup(db *gorm.DB, logger log.Logger, signingKey string) *chi.Mux {
 
 	repoApprove := approve.NewPostgresRepository(db, logger)
+	payApprove := approve.NewPayment(logger)
 
 	router := chi.NewRouter()
 	approveController := &approve.Controller{
 		Logger: logger,
 		Repo:   repoApprove,
+		Pay:    payApprove,
 	}
 
 	var routes = Routes{

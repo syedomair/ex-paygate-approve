@@ -1,15 +1,13 @@
 package approve
 
 import (
-	"crypto/rand"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
 
-	"github.com/syedomair/ex-pay-gateway/lib/models"
-	"github.com/syedomair/ex-pay-gateway/lib/tools/logger"
+	"github.com/syedomair/ex-paygate-lib/lib/models"
+	"github.com/syedomair/ex-paygate-lib/lib/tools/logger"
 )
 
 type postgresRepo struct {
@@ -47,43 +45,16 @@ func (p *postgresRepo) GetMerchantID(merchantKey string) (int, error) {
 }
 
 // CreateApprove Public
-func (p *postgresRepo) CreateApprove(inputApprove map[string]interface{}, merchantID int) (string, error) {
+func (p *postgresRepo) CreateApprove(approveObj *models.Approve, merchantID int, approveKey string) (*models.Approve, error) {
 	methodName := "CreateApprove"
 	p.logger.Debug(p.requestID, "M:%v start", methodName)
 	start := time.Now()
 
-	ccNumber := ""
-	if ccNumberValue, ok := inputApprove["cc_number"]; ok {
-		ccNumber = ccNumberValue.(string)
-	}
-	ccExpiry := ""
-	if ccExpiryValue, ok := inputApprove["cc_expiry"]; ok {
-		ccExpiry = ccExpiryValue.(string)
-	}
-	currency := ""
-	if currencyValue, ok := inputApprove["currency"]; ok {
-		currency = currencyValue.(string)
-	}
-	amount := ""
-	if amountValue, ok := inputApprove["amount"]; ok {
-		amount = amountValue.(string)
-	}
-
-	key := make([]byte, 10)
-	_, _ = rand.Read(key)
-
-	newApprove := &models.Approve{}
-	newApprove.MerchantID = merchantID
-	newApprove.CCNumber = ccNumber
-	newApprove.CCExpiry = ccExpiry
-	newApprove.Currency = currency
-	newApprove.Amount = amount
-	newApprove.ApproveKey = fmt.Sprintf("%X", key)
-	newApprove.CreatedAt = time.Now().Format(time.RFC3339)
-
-	if err := p.client.Create(newApprove).Error; err != nil {
-		return "", err
+	approveObj.MerchantID = merchantID
+		approveObj.ApproveKey = approveKey
+	if err := p.client.Create(approveObj).Error; err != nil {
+		return &models.Approve{}, err
 	}
 	p.logger.Debug(p.requestID, "M:%v ts %+v", methodName, time.Since(start))
-	return newApprove.ApproveKey, nil
+	return approveObj, nil
 }

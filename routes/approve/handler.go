@@ -1,13 +1,15 @@
 package approve
 
 import (
+	"bytes"
 	"net/http"
+	"net/http/httptest"
 	"time"
 
-	"github.com/syedomair/ex-pay-gateway/lib/models"
-	"github.com/syedomair/ex-pay-gateway/lib/tools/logger"
-	"github.com/syedomair/ex-pay-gateway/lib/tools/request"
-	"github.com/syedomair/ex-pay-gateway/lib/tools/response"
+	"github.com/syedomair/ex-paygate-lib/lib/models"
+	"github.com/syedomair/ex-paygate-lib/lib/tools/logger"
+	"github.com/syedomair/ex-paygate-lib/lib/tools/request"
+	"github.com/syedomair/ex-paygate-lib/lib/tools/response"
 )
 
 const (
@@ -18,6 +20,7 @@ const (
 type Controller struct {
 	Logger logger.Logger
 	Repo   Repository
+	Pay    Payment
 }
 
 //var httpClient = &http.Client{}
@@ -62,13 +65,57 @@ func (c *Controller) ApproveAction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	approveKey, err := c.Repo.CreateApprove(paramMap, merchantID)
+	approveObj := createApproveObject(paramMap)
+	approveKey, err := c.Pay.ApprovePayment(approveObj)
 	if err != nil {
 		response.ErrorResponseHelper(request.GetRequestID(r), methodName, c.Logger, w, errorCodePrefix+"2", err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	responseActionID := map[string]string{"approve_key": approveKey}
+	approveObj, err = c.Repo.CreateApprove(approveObj, merchantID, approveKey)
+	if err != nil {
+		response.ErrorResponseHelper(request.GetRequestID(r), methodName, c.Logger, w, errorCodePrefix+"2", err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	responseActionID := map[string]string{"approve_key": approveObj.ApproveKey}
 	c.Logger.Debug(request.GetRequestID(r), "M:%v ts %+v", methodName, time.Since(start))
 	response.SuccessResponseHelper(w, responseActionID, http.StatusOK)
+}
+
+func MockTestServer(method string, url string, jsonInput []byte) (*httptest.ResponseRecorder, *http.Request) {
+
+	var jsonStr = []byte(jsonInput)
+	req, _ := http.NewRequest(method, url, bytes.NewBuffer(jsonStr))
+	response := httptest.NewRecorder()
+	return response, req
+}
+
+// createApproveObject Public
+func createApproveObject(inputApprove map[string]interface{}) *models.Approve {
+
+	ccNumber := ""
+	if ccNumberValue, ok := inputApprove["cc_number"]; ok {
+		ccNumber = ccNumberValue.(string)
+	}
+	ccExpiry := ""
+	if ccExpiryValue, ok := inputApprove["cc_expiry"]; ok {
+		ccExpiry = ccExpiryValue.(string)
+	}
+	currency := ""
+	if currencyValue, ok := inputApprove["currency"]; ok {
+		currency = currencyValue.(string)
+	}
+	amount := ""
+	if amountValue, ok := inputApprove["amount"]; ok {
+		amount = amountValue.(string)
+	}
+	newApprove := &models.Approve{}
+	newApprove.CCNumber = ccNumber
+	newApprove.CCExpiry = ccExpiry
+	newApprove.Currency = currency
+	newApprove.Amount = amount
+	newApprove.CreatedAt = time.Now().Format(time.RFC3339)
+
+	return newApprove
 }
