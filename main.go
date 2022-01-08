@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"os"
 
-	routes "github.com/syedomair/ex-pay-gateway/approve_micro/routes"
-	"github.com/syedomair/ex-pay-gateway/lib/container"
+	routes "github.com/syedomair/ex-paygate-approve/routes"
+	"github.com/syedomair/ex-paygate-lib/lib/container"
 )
 
 func main() {

@@ -8,8 +8,8 @@ FROM golang:1.16-alpine as builder
 
 
 # Bootstrapping modules dependencies
-RUN mkdir -p /src/approve_micro
-WORKDIR /src/approve_micro
+RUN mkdir -p /src/ex-paygate-approve
+WORKDIR /src/ex-paygate-approve
 RUN apk update && apk upgrade && apk add --no-cache ca-certificates
 RUN update-ca-certificates
 COPY go.mod go.mod
@@ -17,7 +17,7 @@ COPY go.sum go.sum
 RUN go get -v all
 
 # Copying source files
-COPY . /src/approve_micro
+COPY . /src/ex-paygate-approve
 
 # Running tests
 
@@ -55,6 +55,6 @@ WORKDIR /src
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Copy api binary from first step and its dependencies
-COPY --from=builder /src/approve_micro/api api
+COPY --from=builder /src/ex-paygate-approve/api api
 
 CMD ["./api"]
