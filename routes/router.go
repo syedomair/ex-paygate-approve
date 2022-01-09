@@ -55,7 +55,7 @@ type Routes []Route
 func routerSetup(db *gorm.DB, logger log.Logger, signingKey string) *chi.Mux {
 
 	repoApprove := approve.NewPostgresRepository(db, logger)
-	payApprove := approve.NewPayment(logger)
+	payApprove := approve.NewPaymentService(logger)
 
 	router := chi.NewRouter()
 	approveController := &approve.Controller{

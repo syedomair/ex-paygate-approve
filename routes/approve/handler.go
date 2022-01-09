@@ -1,9 +1,7 @@
 package approve
 
 import (
-	"bytes"
 	"net/http"
-	"net/http/httptest"
 	"time"
 
 	"github.com/syedomair/ex-paygate-lib/lib/models"
@@ -78,17 +76,9 @@ func (c *Controller) ApproveAction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseActionID := map[string]string{"approve_key": approveObj.ApproveKey, "amount_approved": approveObj.Amount, "currency": approveObj.Currency}
+	responseActionID := map[string]string{"approve_key": approveObj.ApproveKey, "approved_amount_balance": approveObj.AmountBalance, "currency": approveObj.Currency}
 	c.Logger.Debug(request.GetRequestID(r), "M:%v ts %+v", methodName, time.Since(start))
 	response.SuccessResponseHelper(w, responseActionID, http.StatusOK)
-}
-
-func MockTestServer(method string, url string, jsonInput []byte) (*httptest.ResponseRecorder, *http.Request) {
-
-	var jsonStr = []byte(jsonInput)
-	req, _ := http.NewRequest(method, url, bytes.NewBuffer(jsonStr))
-	response := httptest.NewRecorder()
-	return response, req
 }
 
 // createApproveObject Public
@@ -115,6 +105,8 @@ func createApproveObject(inputApprove map[string]interface{}) *models.Approve {
 	newApprove.CCExpiry = ccExpiry
 	newApprove.Currency = currency
 	newApprove.Amount = amount
+	newApprove.Status = 1
+	newApprove.AmountBalance = amount
 	newApprove.CreatedAt = time.Now().Format(time.RFC3339)
 
 	return newApprove
