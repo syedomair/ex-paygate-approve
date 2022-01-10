@@ -13,7 +13,16 @@ import (
 )
 
 const (
-	errorCodePrefix = "01"
+	errorCodePrefix       = "01"
+	MerchantKey           = "merchant_key"
+	CcNumber              = "cc_number"
+	CcCVV                 = "cc_cvv"
+	CcMonth               = "cc_month"
+	CcYear                = "cc_year"
+	Currency              = "currency"
+	Amount                = "amount"
+	ApproveKey            = "approve_key"
+	ApprovedAmountBalance = "approved_amount_balance"
 )
 
 // Controller Public
@@ -23,14 +32,12 @@ type Controller struct {
 	Pay    Payment
 }
 
-//var httpClient = &http.Client{}
-
 // Ping Public
 func (c *Controller) Ping(w http.ResponseWriter, r *http.Request) {
 	methodName := "Ping"
 	c.Logger.Debug(request.GetRequestID(r), "M:%v start", methodName)
 	start := time.Now()
-	responseToken := map[string]string{"response": "authController pong"}
+	responseToken := map[string]string{"response": "approveController pong"}
 	c.Logger.Debug(request.GetRequestID(r), "M:%v ts %+v", methodName, time.Since(start))
 	response.SuccessResponseHelper(w, responseToken, http.StatusOK)
 }
@@ -42,13 +49,13 @@ func (c *Controller) ApproveAction(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 
 	paramConf := make(map[string]models.ParamConf)
-	paramConf["merchant_key"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
-	paramConf["cc_number"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
-	paramConf["cc_cvv"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
-	paramConf["cc_month"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
-	paramConf["cc_year"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
-	paramConf["currency"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
-	paramConf["amount"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
+	paramConf[MerchantKey] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
+	paramConf[CcNumber] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
+	paramConf[CcCVV] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
+	paramConf[CcMonth] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
+	paramConf[CcYear] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
+	paramConf[Currency] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
+	paramConf[Amount] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
 
 	paramMap, errCode, err := request.ValidateInputParameters(r, request.GetRequestID(r), c.Logger, paramConf, nil)
 	if err != nil {
@@ -57,7 +64,7 @@ func (c *Controller) ApproveAction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	merchantKey := ""
-	if merchantKeyValue, ok := paramMap["merchant_key"]; ok {
+	if merchantKeyValue, ok := paramMap[MerchantKey]; ok {
 		merchantKey = merchantKeyValue.(string)
 	}
 
@@ -90,36 +97,36 @@ func (c *Controller) ApproveAction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseActionID := map[string]string{"approve_key": approveObj.ApproveKey, "approved_amount_balance": approveObj.AmountBalance, "currency": approveObj.Currency}
+	responseAction := map[string]string{ApproveKey: approveObj.ApproveKey, ApprovedAmountBalance: approveObj.AmountBalance, Currency: approveObj.Currency}
 	c.Logger.Debug(request.GetRequestID(r), "M:%v ts %+v", methodName, time.Since(start))
-	response.SuccessResponseHelper(w, responseActionID, http.StatusOK)
+	response.SuccessResponseHelper(w, responseAction, http.StatusOK)
 }
 
 // createApproveObject Public
 func createApproveObject(inputApprove map[string]interface{}) *models.Approve {
 
 	ccNumber := ""
-	if ccNumberValue, ok := inputApprove["cc_number"]; ok {
+	if ccNumberValue, ok := inputApprove[CcNumber]; ok {
 		ccNumber = ccNumberValue.(string)
 	}
 	ccCVV := ""
-	if ccCVVValue, ok := inputApprove["cc_cvv"]; ok {
+	if ccCVVValue, ok := inputApprove[CcCVV]; ok {
 		ccCVV = ccCVVValue.(string)
 	}
 	ccMonth := ""
-	if ccMonthValue, ok := inputApprove["cc_month"]; ok {
+	if ccMonthValue, ok := inputApprove[CcMonth]; ok {
 		ccMonth = ccMonthValue.(string)
 	}
 	ccYear := ""
-	if ccYearValue, ok := inputApprove["cc_year"]; ok {
+	if ccYearValue, ok := inputApprove[CcYear]; ok {
 		ccYear = ccYearValue.(string)
 	}
 	currency := ""
-	if currencyValue, ok := inputApprove["currency"]; ok {
+	if currencyValue, ok := inputApprove[Currency]; ok {
 		currency = currencyValue.(string)
 	}
 	amount := ""
-	if amountValue, ok := inputApprove["amount"]; ok {
+	if amountValue, ok := inputApprove[Amount]; ok {
 		amount = amountValue.(string)
 	}
 	newApprove := &models.Approve{}
@@ -132,6 +139,5 @@ func createApproveObject(inputApprove map[string]interface{}) *models.Approve {
 	newApprove.Status = 1
 	newApprove.AmountBalance = amount
 	newApprove.CreatedAt = time.Now().Format(time.RFC3339)
-
 	return newApprove
 }
