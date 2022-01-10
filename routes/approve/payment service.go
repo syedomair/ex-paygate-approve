@@ -26,9 +26,8 @@ func (payWrap *PaymentService) ApprovePayment(approveObj *models.Approve) (strin
 	payWrap.logger.Debug(payWrap.requestID, "M:%v start", methodName)
 	start := time.Now()
 
-	if approveObj.CCNumber != "4000000000000000" {
-		return "", errors.New("invalid credit card")
-
+	if approveObj.CCNumber == "4000000000000119" {
+		return "", errors.New("authorisation failure")
 	}
 
 	key := make([]byte, 10)

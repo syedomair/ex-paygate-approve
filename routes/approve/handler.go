@@ -1,9 +1,11 @@
 package approve
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
+	creditcard "github.com/durango/go-credit-card"
 	"github.com/syedomair/ex-paygate-lib/lib/models"
 	"github.com/syedomair/ex-paygate-lib/lib/tools/logger"
 	"github.com/syedomair/ex-paygate-lib/lib/tools/request"
@@ -42,7 +44,9 @@ func (c *Controller) ApproveAction(w http.ResponseWriter, r *http.Request) {
 	paramConf := make(map[string]models.ParamConf)
 	paramConf["merchant_key"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
 	paramConf["cc_number"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
-	paramConf["cc_expiry"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
+	paramConf["cc_cvv"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
+	paramConf["cc_month"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
+	paramConf["cc_year"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
 	paramConf["currency"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
 	paramConf["amount"] = models.ParamConf{Required: true, Type: request.STRING, EmptyAllowed: false}
 
@@ -64,6 +68,16 @@ func (c *Controller) ApproveAction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	approveObj := createApproveObject(paramMap)
+
+	//Luhn Check
+	card := creditcard.Card{Number: approveObj.CCNumber, Cvv: approveObj.CCCVV, Month: approveObj.CCMonth, Year: approveObj.CCYear}
+	err = card.Validate(true)
+	if err != nil {
+		response.ErrorResponseHelper(request.GetRequestID(r), methodName, c.Logger, w, errorCodePrefix+"2", errors.New("invalid credit card").Error(), http.StatusBadRequest)
+		return
+
+	}
+
 	approveKey, err := c.Pay.ApprovePayment(approveObj)
 	if err != nil {
 		response.ErrorResponseHelper(request.GetRequestID(r), methodName, c.Logger, w, errorCodePrefix+"2", err.Error(), http.StatusBadRequest)
@@ -88,9 +102,17 @@ func createApproveObject(inputApprove map[string]interface{}) *models.Approve {
 	if ccNumberValue, ok := inputApprove["cc_number"]; ok {
 		ccNumber = ccNumberValue.(string)
 	}
-	ccExpiry := ""
-	if ccExpiryValue, ok := inputApprove["cc_expiry"]; ok {
-		ccExpiry = ccExpiryValue.(string)
+	ccCVV := ""
+	if ccCVVValue, ok := inputApprove["cc_cvv"]; ok {
+		ccCVV = ccCVVValue.(string)
+	}
+	ccMonth := ""
+	if ccMonthValue, ok := inputApprove["cc_month"]; ok {
+		ccMonth = ccMonthValue.(string)
+	}
+	ccYear := ""
+	if ccYearValue, ok := inputApprove["cc_year"]; ok {
+		ccYear = ccYearValue.(string)
 	}
 	currency := ""
 	if currencyValue, ok := inputApprove["currency"]; ok {
@@ -102,7 +124,9 @@ func createApproveObject(inputApprove map[string]interface{}) *models.Approve {
 	}
 	newApprove := &models.Approve{}
 	newApprove.CCNumber = ccNumber
-	newApprove.CCExpiry = ccExpiry
+	newApprove.CCCVV = ccCVV
+	newApprove.CCMonth = ccMonth
+	newApprove.CCYear = ccYear
 	newApprove.Currency = currency
 	newApprove.Amount = amount
 	newApprove.Status = 1

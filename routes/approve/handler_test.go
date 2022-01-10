@@ -55,8 +55,8 @@ type mockPay struct {
 }
 
 func (mdb *mockPay) ApprovePayment(approveObj *models.Approve) (string, error) {
-	if approveObj.CCNumber != "4000000000000000" {
-		return "", errors.New("invalid credit card")
+	if approveObj.CCNumber == "4000000000000119" {
+		return "", errors.New("authorisation failure")
 	}
 	key := make([]byte, 10)
 	_, _ = rand.Read(key)

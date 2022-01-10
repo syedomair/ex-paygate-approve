@@ -51,7 +51,7 @@ func (p *postgresRepo) CreateApprove(approveObj *models.Approve, merchantID int,
 	start := time.Now()
 
 	approveObj.MerchantID = merchantID
-		approveObj.ApproveKey = approveKey
+	approveObj.ApproveKey = approveKey
 	if err := p.client.Create(approveObj).Error; err != nil {
 		return &models.Approve{}, err
 	}
